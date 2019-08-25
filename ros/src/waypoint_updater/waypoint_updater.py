@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
 import rospy
+import numpy as np
 from geometry_msgs.msg import PoseStamped
 from styx_msgs.msg import Lane, Waypoint
+from scipy.spatial import KDTree
 
 import math
 
@@ -37,16 +39,31 @@ class WaypointUpdater(object):
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
         # TODO: Add other member variables you need below
+        self.pose = None
+        self.base_waypoints = None
+        self.waypoint_2d = None
+        self.waypoint_tree = None
 
-        rospy.spin()
+        self.loop()
+
+    def loop(self):
+        rate = rospy.Rate(50)
+
+        while not rospy.is_shutdown():
+            if self.pose and self.base_waypoints:
+                closest_waypoint_idx = self.get_closest_waypoint_idx()
+                self.publishing_waypoints(closest_waypoint_idx)
+            rate.sleep()
 
     def pose_cb(self, msg):
-        # TODO: Implement
-        pass
+        self.pose = msg
 
     def waypoints_cb(self, waypoints):
-        # TODO: Implement
-        pass
+        print waypoints;
+        self.base_waypoints = waypoints
+        if not self.waypoint_2d:
+            self.waypoint_2d = [[waypoint.pose.pose.position.x, waypoint.pose.pose.position.y] for waypoint in waypoints.waypoints]
+            self.waypoint_tree = KDTree(self.waypoint_2d)
 
     def traffic_cb(self, msg):
         # TODO: Callback for /traffic_waypoint message. Implement
@@ -69,6 +86,32 @@ class WaypointUpdater(object):
             dist += dl(waypoints[wp1].pose.pose.position, waypoints[i].pose.pose.position)
             wp1 = i
         return dist
+
+    def get_closest_waypoint_idx(self):
+        x = self.pose.pose.position.x
+        y = self.pose.pose.position.y
+        closest_idx = self.waypoint_tree.query([x, y], 1)[1]
+
+        closest_cord = self.waypoint_2d[closest_idx]
+        prev_cord = self.waypoint_2d[closest_idx-1]
+
+        cl_vec = np.array(closest_cord)
+        prev_vec = np.array(prev_cord)
+        pose_vec = np.array([x, y])
+
+        val = np.dot(cl_vec - prev_vec, pose_vec - cl_vec)
+
+        if val > 0:
+            closest_idx = (closest_idx + 1) % len(self.waypoint_2d)
+
+        return closest_idx
+
+    def publishing_waypoints(self, closest_waypoint_idx):
+        lane = Lane()
+        lane.header = self.base_waypoints.header
+        lane.waypoints = self.base_waypoints.waypoints[closest_waypoint_idx:closest_waypoint_idx + LOOKAHEAD_WPS]
+
+        self.final_waypoints_pub.publish(lane)
 
 
 if __name__ == '__main__':
