@@ -4,3 +4,5 @@ build
 devel
 
 profile.tmp
+
+data/dbw_test.rosbag.bag
