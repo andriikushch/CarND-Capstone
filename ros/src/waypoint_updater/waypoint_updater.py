@@ -23,7 +23,7 @@ as well as to verify your TL classifier.
 TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
-LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
+LOOKAHEAD_WPS = 200  # Number of waypoints we will publish. You can change this number
 
 
 class WaypointUpdater(object):
@@ -34,7 +34,6 @@ class WaypointUpdater(object):
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
 
         # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
-
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
@@ -50,7 +49,7 @@ class WaypointUpdater(object):
         rate = rospy.Rate(50)
 
         while not rospy.is_shutdown():
-            if self.pose and self.base_waypoints:
+            if self.pose and self.base_waypoints and self.waypoint_tree:
                 closest_waypoint_idx = self.get_closest_waypoint_idx()
                 self.publishing_waypoints(closest_waypoint_idx)
             rate.sleep()
@@ -59,10 +58,10 @@ class WaypointUpdater(object):
         self.pose = msg
 
     def waypoints_cb(self, waypoints):
-        print waypoints;
         self.base_waypoints = waypoints
         if not self.waypoint_2d:
-            self.waypoint_2d = [[waypoint.pose.pose.position.x, waypoint.pose.pose.position.y] for waypoint in waypoints.waypoints]
+            self.waypoint_2d = [[waypoint.pose.pose.position.x, waypoint.pose.pose.position.y] for waypoint in
+                                waypoints.waypoints]
             self.waypoint_tree = KDTree(self.waypoint_2d)
 
     def traffic_cb(self, msg):
@@ -81,8 +80,8 @@ class WaypointUpdater(object):
 
     def distance(self, waypoints, wp1, wp2):
         dist = 0
-        dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
-        for i in range(wp1, wp2+1):
+        dl = lambda a, b: math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2)
+        for i in range(wp1, wp2 + 1):
             dist += dl(waypoints[wp1].pose.pose.position, waypoints[i].pose.pose.position)
             wp1 = i
         return dist
@@ -93,7 +92,7 @@ class WaypointUpdater(object):
         closest_idx = self.waypoint_tree.query([x, y], 1)[1]
 
         closest_cord = self.waypoint_2d[closest_idx]
-        prev_cord = self.waypoint_2d[closest_idx-1]
+        prev_cord = self.waypoint_2d[closest_idx - 1]
 
         cl_vec = np.array(closest_cord)
         prev_vec = np.array(prev_cord)
