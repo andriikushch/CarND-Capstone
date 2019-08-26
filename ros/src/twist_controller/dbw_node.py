@@ -82,7 +82,7 @@ class DBWNode(object):
     def loop(self):
         rate = rospy.Rate(50)  # 50Hz
         while not rospy.is_shutdown():
-            rospy.logwarn("LOOP: current_vel={:}, linear_vel={:}, angular_vel={:}, dbw_enabled={:}".format(self.current_vel, self.linear_vel, self.angular_vel, self.dbw_enabled))
+            # rospy.logwarn("LOOP: current_vel={:}, linear_vel={:}, angular_vel={:}, dbw_enabled={:}".format(self.current_vel, self.linear_vel, self.angular_vel, self.dbw_enabled))
 
             if not None in (self.current_vel, self.linear_vel, self.angular_vel):
                 self.throttle, self.brake, self.steering = self.controller.control(
@@ -106,7 +106,7 @@ class DBWNode(object):
         self.current_vel = msg.twist.linear.x
 
     def publish(self, throttle, brake, steer):
-        rospy.logwarn("PUBLISH: throttle={:.2f}, brake={:.2f}, steering={:.2f}, dbw_enabled={:}".format(throttle, brake, steer, self.dbw_enabled))
+        # rospy.logwarn("PUBLISH: throttle={:.2f}, brake={:.2f}, steering={:.2f}, dbw_enabled={:}".format(throttle, brake, steer, self.dbw_enabled))
         tcmd = ThrottleCmd()
         tcmd.enable = True
         tcmd.pedal_cmd_type = ThrottleCmd.CMD_PERCENT
