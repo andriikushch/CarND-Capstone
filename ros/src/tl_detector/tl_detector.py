@@ -10,6 +10,8 @@ from light_classification.tl_classifier import TLClassifier
 import tf
 import cv2
 import yaml
+from scipy.spatial import KDTree
+import numpy as np
 
 STATE_COUNT_THRESHOLD = 3
 
@@ -19,6 +21,10 @@ class TLDetector(object):
 
         self.pose = None
         self.waypoints = None
+        self.waypoint_2d = None
+        self.waypoint_tree = None
+
+
         self.camera_image = None
         self.lights = []
 
@@ -56,6 +62,10 @@ class TLDetector(object):
 
     def waypoints_cb(self, waypoints):
         self.waypoints = waypoints
+        if not self.waypoint_2d:
+            self.waypoint_2d = [[waypoint.pose.pose.position.x, waypoint.pose.pose.position.y] for waypoint in
+                                waypoints.waypoints]
+            self.waypoint_tree = KDTree(self.waypoint_2d)
 
     def traffic_cb(self, msg):
         self.lights = msg.lights
@@ -100,8 +110,23 @@ class TLDetector(object):
             int: index of the closest waypoint in self.waypoints
 
         """
-        #TODO implement
-        return 0
+        x = pose.position.x
+        y = pose.position.y
+        closest_idx = self.waypoint_tree.query([x, y], 1)[1]
+
+        closest_cord = self.waypoint_2d[closest_idx]
+        prev_cord = self.waypoint_2d[closest_idx - 1]
+
+        cl_vec = np.array(closest_cord)
+        prev_vec = np.array(prev_cord)
+        pose_vec = np.array([x, y])
+
+        val = np.dot(cl_vec - prev_vec, pose_vec - cl_vec)
+
+        if val > 0:
+            closest_idx = (closest_idx + 1) % len(self.waypoint_2d)
+
+        return closest_idx
 
     def get_light_state(self, light):
         """Determines the current color of the traffic light
