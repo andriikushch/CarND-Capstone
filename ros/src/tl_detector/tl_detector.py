@@ -28,8 +28,8 @@ class TLDetector(object):
         self.camera_image = None
         self.lights = []
 
-        sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
-        sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
+        rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
+        rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
 
         '''
         /vehicle/traffic_lights provides you with the location of the traffic light in 3D map space and
@@ -38,8 +38,8 @@ class TLDetector(object):
         simulator. When testing on the vehicle, the color state will not be available. You'll need to
         rely on the position of the light and the camera image to predict it.
         '''
-        sub3 = rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb)
-        sub6 = rospy.Subscriber('/image_color', Image, self.image_cb)
+        rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb)
+        rospy.Subscriber('/image_color', Image, self.image_cb)
 
         config_string = rospy.get_param("/traffic_light_config")
         self.config = yaml.load(config_string)
@@ -100,18 +100,15 @@ class TLDetector(object):
             self.upcoming_red_light_pub.publish(Int32(self.last_wp))
         self.state_count += 1
 
-    def get_closest_waypoint(self, pose):
+    def get_closest_waypoint(self, x, y):
         """Identifies the closest path waypoint to the given position
             https://en.wikipedia.org/wiki/Closest_pair_of_points_problem
         Args:
-            pose (Pose): position to match a waypoint to
-
+            :param y:
+            :param x:
         Returns:
             int: index of the closest waypoint in self.waypoints
-
         """
-        x = pose.position.x
-        y = pose.position.y
         closest_idx = self.waypoint_tree.query([x, y], 1)[1]
 
         closest_cord = self.waypoint_2d[closest_idx]
@@ -161,9 +158,25 @@ class TLDetector(object):
         # List of positions that correspond to the line to stop in front of for a given intersection
         stop_line_positions = self.config['stop_line_positions']
         if(self.pose):
-            car_position = self.get_closest_waypoint(self.pose.pose)
+            closets_waypoint_to_the_car_idx = self.get_closest_waypoint(self.pose.pose.position.x, self.pose.pose.position.y)
+            # todo: change?
 
-        #TODO find the closest visible traffic light (if one exists)
+            closets_waypoint_to_the_line_idx = closets_waypoint_to_the_car_idx
+            for line in stop_line_positions:
+                # check if line behind
+                if closets_waypoint_to_the_line_idx > closets_waypoint_to_the_car_idx:
+                    rospy.loginfo('Line behind {}'.format(line))
+                    continue
+
+                # stop line is ahead and closer then previously found, the use it
+                tmp_closets_waypoint_to_the_line_idx = self.get_closest_waypoint(line[0], line[1])
+                rospy.loginfo('tmp_closets_waypoint_to_the_line_idx {} closets_waypoint_to_the_line_idx {}'.format(tmp_closets_waypoint_to_the_line_idx, closets_waypoint_to_the_line_idx))
+
+                if closets_waypoint_to_the_line_idx > tmp_closets_waypoint_to_the_line_idx:
+                    closets_waypoint_to_the_line_idx = tmp_closets_waypoint_to_the_line_idx
+
+
+
 
         if light:
             state = self.get_light_state(light)
