@@ -9,6 +9,8 @@ from scipy.spatial import KDTree
 
 import math
 
+MAX_DECEL = 0.5
+
 '''
 This node will publish waypoints from the car's current position to some `x` distance ahead.
 
@@ -88,6 +90,8 @@ class WaypointUpdater(object):
 
         closest_idx = self.get_closest_waypoint_idx()
         farthest_idx = closest_idx + LOOKAHEAD_WPS
+        rospy.loginfo("stopline_wp_idx {} closest_idx {} farthest_idx {}".format(self.stopline_wp_idx, closest_idx, farthest_idx))
+
         base_waypoints = self.base_waypoints.waypoints[closest_idx:farthest_idx]
 
         if (self.stopline_wp_idx == -1) or (self.stopline_wp_idx >= farthest_idx):

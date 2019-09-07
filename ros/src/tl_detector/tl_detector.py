@@ -19,8 +19,6 @@ class TLDetector(object):
     def __init__(self):
         rospy.init_node('tl_detector')
 
-        self.cycle = 0
-
         self.pose = None
         self.waypoints = None
         self.waypoint_2d = None
@@ -92,10 +90,6 @@ class TLDetector(object):
             msg (Image): image from car-mounted camera
 
         """
-        self.cycle += 1
-        if self.cycle % 5 != 0 :
-            rospy.loginfo("ignore image")
-            return
 
         self.has_image = True
         self.camera_image = msg
@@ -107,6 +101,7 @@ class TLDetector(object):
         of times till we start using it. Otherwise the previous stable state is
         used.
         '''
+        rospy.loginfo("light_wp {} state {}".format(light_wp, state))
         if self.state != state:
             self.state_count = 0
             self.state = state
@@ -154,7 +149,7 @@ class TLDetector(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
 
         """
-        if self.is_site :
+        if not self.is_site :
             # todo remove
             # cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
             # cv2.imwrite('/tmp/images/{}_{}.png'.format(light.state, time.time()),cv_image)
