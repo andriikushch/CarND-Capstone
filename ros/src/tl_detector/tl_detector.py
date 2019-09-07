@@ -24,6 +24,8 @@ class TLDetector(object):
         self.waypoint_2d = None
         self.waypoint_tree = None
 
+        self.waypoints_close_to_line = []
+
 
         self.camera_image = None
         self.lights = []
@@ -66,6 +68,15 @@ class TLDetector(object):
             self.waypoint_2d = [[waypoint.pose.pose.position.x, waypoint.pose.pose.position.y] for waypoint in
                                 waypoints.waypoints]
             self.waypoint_tree = KDTree(self.waypoint_2d)
+
+        # List of positions that correspond to the line to stop in front of for a given intersection
+        stop_line_positions = self.config['stop_line_positions']
+        for line in stop_line_positions:
+            waypoint_idx = self.get_closest_waypoint(line[0], line[1])
+            self.waypoints_close_to_line.append(waypoint_idx)
+
+        self.waypoints_close_to_line.reverse()
+        rospy.loginfo("lines waypoints {}".format(self.waypoints_close_to_line))
 
     def traffic_cb(self, msg):
         self.lights = msg.lights
@@ -155,26 +166,12 @@ class TLDetector(object):
         """
         light = None
 
-        # List of positions that correspond to the line to stop in front of for a given intersection
-        stop_line_positions = self.config['stop_line_positions']
-        if(self.pose):
+
+        if self.pose and len(self.waypoints_close_to_line) != 0:
             closets_waypoint_to_the_car_idx = self.get_closest_waypoint(self.pose.pose.position.x, self.pose.pose.position.y)
-            # todo: change?
 
-            closets_waypoint_to_the_line_idx = closets_waypoint_to_the_car_idx
-            for line in stop_line_positions:
-                # check if line behind
-                if closets_waypoint_to_the_line_idx > closets_waypoint_to_the_car_idx:
-                    rospy.loginfo('Line behind {}'.format(line))
-                    continue
-
-                # stop line is ahead and closer then previously found, the use it
-                tmp_closets_waypoint_to_the_line_idx = self.get_closest_waypoint(line[0], line[1])
-                rospy.loginfo('tmp_closets_waypoint_to_the_line_idx {} closets_waypoint_to_the_line_idx {}'.format(tmp_closets_waypoint_to_the_line_idx, closets_waypoint_to_the_line_idx))
-
-                if closets_waypoint_to_the_line_idx > tmp_closets_waypoint_to_the_line_idx:
-                    closets_waypoint_to_the_line_idx = tmp_closets_waypoint_to_the_line_idx
-
+            next_line_waypoint = list(filter(lambda x: x > closets_waypoint_to_the_car_idx, self.waypoints_close_to_line)).pop()
+            rospy.loginfo('WAYPOINT {}'.format(next_line_waypoint))
 
 
 
