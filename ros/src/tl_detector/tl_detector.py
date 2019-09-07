@@ -77,7 +77,6 @@ class TLDetector(object):
             self.waypoints_close_to_line.append(waypoint_idx)
 
         self.waypoints_close_to_line.reverse()
-        rospy.loginfo("lines waypoints {}".format(self.waypoints_close_to_line))
 
     def traffic_cb(self, msg):
         self.lights = msg.lights
@@ -101,7 +100,6 @@ class TLDetector(object):
         of times till we start using it. Otherwise the previous stable state is
         used.
         '''
-        rospy.loginfo("light_wp {} state {}".format(light_wp, state))
         if self.state != state:
             self.state_count = 0
             self.state = state
@@ -188,7 +186,6 @@ class TLDetector(object):
 
         if light:
             state = self.get_light_state(light)
-            rospy.loginfo("traffic light is {} at {}".format(state, light_wp))
             return light_wp, state
         self.waypoints = None
         return -1, TrafficLight.UNKNOWN

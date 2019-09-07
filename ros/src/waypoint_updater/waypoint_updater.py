@@ -54,7 +54,6 @@ class WaypointUpdater(object):
 
     def loop(self):
         rate = rospy.Rate(50)
-
         while not rospy.is_shutdown():
             if self.pose and self.base_waypoints and self.waypoint_tree:
                 self.publishing_waypoints()
@@ -71,7 +70,6 @@ class WaypointUpdater(object):
             self.waypoint_tree = KDTree(self.waypoint_2d)
 
     def traffic_cb(self, msg):
-        rospy.loginfo("traffic light detected {}".format(msg))
         self.stopline_wp_idx = msg.data
 
     def obstacle_cb(self, msg):
@@ -116,8 +114,6 @@ class WaypointUpdater(object):
                 vel = 0.0
 
             planned_velocity =  min(vel, wp.twist.twist.linear.x)
-
-            rospy.loginfo("planned_velocity {}".format(planned_velocity))
 
             p.twist.twist.linear.x = planned_velocity
             temp.append(p)
