@@ -15,6 +15,7 @@ import numpy as np
 
 STATE_COUNT_THRESHOLD = 3
 
+
 class TLDetector(object):
     def __init__(self):
         rospy.init_node('tl_detector')
@@ -25,7 +26,6 @@ class TLDetector(object):
         self.waypoint_tree = None
 
         self.waypoints_close_to_line = []
-
 
         self.camera_image = None
         self.lights = []
@@ -147,19 +147,19 @@ class TLDetector(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
 
         """
-        if not self.is_site :
+        if not self.is_site:
             # todo remove
             # cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
             # cv2.imwrite('/tmp/images/{}_{}.png'.format(light.state, time.time()),cv_image)
             return light.state
 
-        if(not self.has_image):
+        if (not self.has_image):
             self.prev_light_loc = None
             return False
 
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 
-        #Get classification
+        # Get classification
         return self.light_classifier.get_classification(cv_image)
 
     def process_traffic_lights(self):
@@ -173,22 +173,21 @@ class TLDetector(object):
         """
         light = None
 
-
         if self.pose and len(self.waypoints_close_to_line) != 0:
-            closets_waypoint_to_the_car_idx = self.get_closest_waypoint(self.pose.pose.position.x, self.pose.pose.position.y)
+            closets_waypoint_to_the_car_idx = self.get_closest_waypoint(self.pose.pose.position.x,
+                                                                        self.pose.pose.position.y)
             light_wp = list(filter(lambda x: x > closets_waypoint_to_the_car_idx, self.waypoints_close_to_line)).pop()
             index_of_trafic_light = self.waypoints_close_to_line.index(light_wp)
             light = self.lights[index_of_trafic_light]
         else:
             light_wp = -1
 
-
-
         if light:
             state = self.get_light_state(light)
             return light_wp, state
         self.waypoints = None
         return -1, TrafficLight.UNKNOWN
+
 
 if __name__ == '__main__':
     try:
