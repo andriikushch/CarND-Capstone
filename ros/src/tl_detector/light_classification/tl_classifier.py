@@ -1,7 +1,6 @@
 from styx_msgs.msg import TrafficLight
 import tensorflow as tf
 import numpy as np
-import rospy
 
 PATH_TO_FROZEN_GRAPH = "light_classification/model.pb"
 
