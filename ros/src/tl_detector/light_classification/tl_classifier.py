@@ -3,7 +3,7 @@ import tensorflow as tf
 import numpy as np
 import rospy
 
-PATH_TO_FROZEN_GRAPH = "model.pb"
+PATH_TO_FROZEN_GRAPH = "light_classification/model.pb"
 
 class TLClassifier(object):
     def __init__(self):
@@ -16,10 +16,10 @@ class TLClassifier(object):
                 od_graph_def.ParseFromString(serialized_graph)
                 tf.import_graph_def(od_graph_def, name='')
 
-            self.image_tensor = self.graph.get_tensor_by_name('image_tensor:0')
-            self.detection_boxes = self.graph.get_tensor_by_name('detection_boxes:0')
-            self.detection_scores = self.graph.get_tensor_by_name('detection_scores:0')
-            self.detection_classes = self.graph.get_tensor_by_name('detection_classes:0')
+            self.image_tensor = self.detection_graph.get_tensor_by_name('image_tensor:0')
+            self.detection_boxes = self.detection_graph.get_tensor_by_name('detection_boxes:0')
+            self.detection_scores = self.detection_graph.get_tensor_by_name('detection_scores:0')
+            self.detection_classes = self.detection_graph.get_tensor_by_name('detection_classes:0')
 
 
     def filter_boxes(self, min_score, boxes, scores, classes):
@@ -50,8 +50,8 @@ class TLClassifier(object):
 
         with tf.Session(graph=self.detection_graph) as sess:
             # Actual detection.
-            (boxes, scores, classes) = sess.run([detection_boxes, detection_scores, detection_classes],
-                                                feed_dict={image_tensor: image_np})
+            (boxes, scores, classes) = sess.run([self.detection_boxes, self.detection_scores, self.detection_classes],
+                                                feed_dict={self.image_tensor: image_np})
 
             # Remove unnecessary dimensions
             boxes = np.squeeze(boxes)
@@ -66,8 +66,6 @@ class TLClassifier(object):
             light_class = int(classes[np.argmax(scores)])
         else:
             light_class = 4
-
-        rospy.loginfo("class {}".format(light_class))
 
         if light_class == 1:
             return TrafficLight.GREEN
